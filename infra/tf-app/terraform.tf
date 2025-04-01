@@ -1,6 +1,10 @@
 terraform {
-  required_version = ">= 0.13"
-
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.96.0"
+    }
+  }
   backend "azurerm" {
     resource_group_name  = "chau0317-githubaction-rg"
     storage_account_name = "chau0317githubaction"
