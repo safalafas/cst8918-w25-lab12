@@ -54,7 +54,8 @@ jobs:
           tflint_version: v0.50.3
 
       - name: Run TFLint
-        run: tflint --config=infra/tf-app/.tflint.hcl --recursive
+        run: tflint --config=.tflint.hcl --recursive
+        working-directory: infra/tf-app
 
   deploy:
     needs: integration_tests
