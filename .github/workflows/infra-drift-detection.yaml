@@ -1,0 +1,39 @@
+name: Daily Drift Detection
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Runs daily at midnight UTC
+  workflow_dispatch:
+
+jobs:
+  drift_detection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "~> 1.5"
+
+      - name: Terraform Init
+        run: terraform init -input=false
+        working-directory: infra/tf-app
+
+      - name: Terraform Plan for Drift Detection
+        id: drift
+        run: |
+          # The -detailed-exitcode flag returns:
+          #   0 if no changes,
+          #   2 if there are changes,
+          #   and 1 if an error occurred.
+          terraform plan -input=false -detailed-exitcode -out=tf-app.plan || echo "::set-output name=exit_code::$?"
+        working-directory: infra/tf-app
+
+      - name: Check Drift and Create Issue
+        if: steps.drift.outputs.exit_code == '2'
+        run: |
+          echo "Drift detected. Creating an issue..."
+          # Example using GitHub CLI (gh) to create an issue:
+          gh issue create --title "Terraform Drift Detected" --body "Drift detected in the deployed infrastructure. Please investigate." --label drift

@@ -1,0 +1,30 @@
+name: Static Code Analysis
+
+on:
+  push:
+    branches: ["*"]
+
+jobs:
+  static_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "~> 1.5"
+
+      - name: Terraform Format Check
+        run: terraform fmt -check
+        working-directory: infra/tf-app
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: infra/tf-app
+
+      - name: Run Checkov Security Scan
+        uses: bridgecrewio/checkov-action@v4
+        with:
+          directory: infra/tf-app
