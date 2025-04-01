@@ -5,6 +5,9 @@ on:
     - cron: "0 0 * * *" # Every day at midnight UTC
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
 jobs:
   drift_detection:
     runs-on: ubuntu-latest
