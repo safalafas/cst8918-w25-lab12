@@ -52,7 +52,11 @@ jobs:
         uses: terraform-linters/setup-tflint@v1
         with:
           tflint_version: v0.50.3
-
+      
+      - name: Initialize TFLint Plugins
+        run: tflint --init
+        working-directory: infra/tf-app
+        
       - name: Run TFLint
         run: tflint --config=.tflint.hcl --recursive
         working-directory: infra/tf-app
