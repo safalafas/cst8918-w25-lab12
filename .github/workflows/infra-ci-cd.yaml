@@ -52,11 +52,11 @@ jobs:
         uses: terraform-linters/setup-tflint@v1
         with:
           tflint_version: v0.50.3
-      
+
       - name: Initialize TFLint Plugins
         run: tflint --init
         working-directory: infra/tf-app
-        
+
       - name: Run TFLint
         run: tflint --config=.tflint.hcl --recursive
         working-directory: infra/tf-app
@@ -85,6 +85,15 @@ jobs:
 
       - name: Terraform Init
         run: terraform init -input=false
+        working-directory: infra/tf-app
+        env:
+          ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
+          TF_VAR_client_id: ${{ secrets.AZURE_CLIENT_ID }}
+          TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Plan (again)
+        run: terraform plan -out=tf-app.plan
         working-directory: infra/tf-app
         env:
           ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
