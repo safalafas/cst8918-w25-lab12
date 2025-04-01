@@ -2,7 +2,7 @@ name: Static Code Analysis
 
 on:
   push:
-    branches: ["*"]
+    branches: [ "*" ]
 
 permissions:
   contents: read
@@ -20,6 +20,14 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: "~> 1.5"
+
+      - name: Terraform Init (no backend)
+        run: terraform init -backend=false
+        working-directory: infra/tf-app
+        env:
+          TF_VAR_client_id: "dummy"
+          TF_VAR_tenant_id: "dummy"
+          TF_VAR_subscription_id: "dummy"
 
       - name: Terraform Format Check
         run: terraform fmt -check
