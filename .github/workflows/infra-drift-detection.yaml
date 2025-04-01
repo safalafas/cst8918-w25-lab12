@@ -2,15 +2,23 @@ name: Daily Drift Detection
 
 on:
   schedule:
-    - cron: "0 0 * * *" # Runs daily at midnight UTC
+    - cron: "0 0 * * *" # Every day at midnight UTC
   workflow_dispatch:
 
 jobs:
   drift_detection:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -21,19 +29,14 @@ jobs:
         run: terraform init -input=false
         working-directory: infra/tf-app
 
-      - name: Terraform Plan for Drift Detection
-        id: drift
+      - name: Terraform Plan (Detect Drift)
+        id: plan
         run: |
-          # The -detailed-exitcode flag returns:
-          #   0 if no changes,
-          #   2 if there are changes,
-          #   and 1 if an error occurred.
-          terraform plan -input=false -detailed-exitcode -out=tf-app.plan || echo "::set-output name=exit_code::$?"
+          terraform plan -detailed-exitcode -out=tf-app.plan || exit_code=$?
+          echo "plan_exit_code=${exit_code:-0}" >> "$GITHUB_OUTPUT"
         working-directory: infra/tf-app
 
-      - name: Check Drift and Create Issue
-        if: steps.drift.outputs.exit_code == '2'
+      - name: Report Drift Detected
+        if: steps.plan.outputs.plan_exit_code == '2'
         run: |
-          echo "Drift detected. Creating an issue..."
-          # Example using GitHub CLI (gh) to create an issue:
-          gh issue create --title "Terraform Drift Detected" --body "Drift detected in the deployed infrastructure. Please investigate." --label drift
+          echo "Drift detected! You may want to investigate."
