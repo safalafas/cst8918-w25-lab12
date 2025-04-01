@@ -4,6 +4,10 @@ on:
   push:
     branches: ["*"]
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   static_tests:
     runs-on: ubuntu-latest
@@ -24,6 +28,10 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
         working-directory: infra/tf-app
+        env:
+          TF_VAR_client_id: "dummy"
+          TF_VAR_tenant_id: "dummy"
+          TF_VAR_subscription_id: "dummy"
 
       - name: Run Checkov Security Scan
         uses: bridgecrewio/checkov-action@v12
