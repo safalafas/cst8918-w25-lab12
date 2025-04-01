@@ -1,0 +1,56 @@
+name: Integration Tests and Terraform Deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  integration_tests:
+    runs-on: ubuntu-latest
+    outputs:
+      plan-exit-code: ${{ steps.plan.outputs.exit_code }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "~> 1.5"
+
+      - name: Terraform Init
+        run: terraform init -input=false
+        working-directory: infra/tf-app
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -input=false -detailed-exitcode -out=tf-app.plan || echo "::set-output name=exit_code::$?"
+        working-directory: infra/tf-app
+
+      - name: Run TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+  deploy:
+    needs: integration_tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "~> 1.5"
+
+      - name: Terraform Init
+        run: terraform init -input=false
+        working-directory: infra/tf-app
+
+      - name: Terraform Apply
+        run: terraform apply -input=false tf-app.plan
+        working-directory: infra/tf-app
